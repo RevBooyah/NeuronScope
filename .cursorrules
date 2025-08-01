@@ -1,0 +1,159 @@
+# NeuronScope - AI Assistant Configuration
+
+## Project Overview
+NeuronScope is an open-source research and visualization platform for exploring neuron activations inside transformer models (initially GPT-2, with LLaMA support planned). The project aims to provide interactive, intuitive visual insights into how transformer model neurons activate, cluster, drift, and respond to various inputs.
+
+## Architecture & Technology Stack
+- **Backend/Core**: Python 3.11+ (PyTorch, NumPy, Pandas, scikit-learn)
+- **Frontend/Web UI**: React with interactive plotting libraries (Plotly, D3.js)
+- **Data Format**: JSON-based data exchange between backend and frontend
+- **Optional**: C/Cython for performance optimization if >5x gains identified
+
+## Development Guidelines
+
+### Code Organization
+- Follow the modular separation between backend (data generation, analysis) and frontend (interactive visual display)
+- Use the defined data structures from `DATA_STRUCTURE.md` for all JSON outputs - if changes are required, please ask.
+- Implement features as small, focused modules that can be completed in 1-2 prompts
+- Break tasks into one-feature files to improve AI comprehension
+- Do NOT make mock functions or stubs. Test data should be realistic.
+
+### Python Backend Standards
+- Use type hints for all function parameters and return values
+- Follow PEP 8 style guidelines
+- Include comprehensive docstrings for all functions
+- Structure activation data according to the JSON schema in `DATA_STRUCTURE.md`
+- Use PyTorch for GPT-2 model loading and inference
+- Implement clustering using scikit-learn (K-Means initially)
+
+### React Frontend Standards
+- Use functional components with hooks
+- Implement responsive design principles
+- Follow the visualization guidelines from `VISUALIZATION_GUIDELINES.md`
+- Use Plotly.js for interactive visualizations
+- Structure components to handle the defined JSON data formats
+- Implement proper error handling and loading states
+
+### Data Flow
+1. User enters prompt or selects from samples
+2. Python backend runs prompt through GPT-2, extracting activations
+3. Backend saves structured JSON for activations, clusters, and queries
+4. React frontend loads and visualizes data via interactive components
+
+## Key Features to Implement (in order)
+
+### Phase 1: Core Infrastructure
+- GPT-2 model loading and activation extraction
+- Basic React app setup with routing
+- JSON data structure implementation
+- Sample prompt processing
+
+### Phase 2: Visualization Core
+- Neuron activation heatmaps
+- Interactive scatter plots with PCA/t-SNE
+- Basic clustering visualization
+- Reverse activation query system
+
+### Phase 3: Advanced Features
+- Neuron drift analysis across checkpoints
+- Polysemantic neuron detection
+- Animation support for temporal data
+- CLI tools for batch processing
+
+## File Structure
+```
+src/
+├── backend/
+│   ├── models/          # GPT-2 model loading
+│   ├── activations/     # Activation extraction
+│   ├── clustering/      # Neuron clustering
+│   ├── queries/         # Reverse activation queries
+│   └── utils/           # Utility functions
+├── frontend/
+│   ├── components/      # React components
+│   ├── hooks/           # Custom React hooks
+│   ├── utils/           # Frontend utilities
+│   └── pages/           # Page components
+├── data/
+│   ├── activations/     # Generated activation JSON
+│   ├── clusters/        # Generated cluster JSON
+│   └── queries/         # Generated query JSON
+└── scripts/             # CLI tools and utilities
+```
+
+## Coding Standards
+
+### Python
+- Use virtual environments for dependency management
+- Implement proper error handling for model loading and inference
+- Use async/await for potentially long-running operations
+- Include logging for debugging and monitoring
+- Write unit tests for core functionality
+
+### React/JavaScript
+- Use modern ES6+ syntax
+- Implement proper state management (useState, useContext)
+- Use TypeScript for better type safety
+- Follow React best practices for performance
+- Implement proper error boundaries
+
+### Visualization
+- Prioritize interpretability over aesthetics
+- Use consistent color schemes and styling
+- Implement proper tooltips and legends
+- Ensure accessibility (colorblind-friendly palettes)
+- Design for scalability (small to large neuron counts)
+
+## AI Assistant Instructions
+
+### When Working on Backend
+- Always consider the JSON output format defined in `DATA_STRUCTURE.md`
+- Implement functions that can handle the sample prompts from `samples.json`
+- Focus on modular, testable code that can be easily integrated
+- Consider performance implications for large models or datasets
+
+### When Working on Frontend
+- Follow the visualization guidelines from `VISUALIZATION_GUIDELINES.md`
+- Implement components that can handle the defined JSON data structures
+- Focus on user experience and interactivity
+- Ensure responsive design for different screen sizes
+
+### When Implementing New Features
+- Check the TODO.md file for specific implementation tasks
+- Use the prompt templates from `PROMPTS.md` for consistent development
+- Follow the design principles outlined in `DESIGN.md`
+- Consider the benefits outlined in `BENEFITS.md` for feature prioritization
+
+### Code Quality
+- Write clear, self-documenting code
+- Include comprehensive comments for complex logic
+- Implement proper error handling and validation
+- Consider edge cases and potential failure modes
+- Write tests for critical functionality
+
+## Development Workflow
+1. Start with small, focused tasks from TODO.md
+2. Implement backend functionality first, then frontend visualization
+3. Test with sample data before integrating
+4. Document any deviations from the defined data structures
+5. Update relevant documentation files as features are implemented
+
+## Performance Considerations
+- Profile code before implementing optimizations
+- Consider C/Cython only if substantial (>5x) performance gains are identified
+- Implement caching for expensive operations (model loading, clustering)
+- Use efficient data structures for large activation matrices
+
+## Testing Strategy
+- Write unit tests for core backend functions
+- Test visualization components with synthetic data
+- Validate JSON output against defined schemas
+- Test with various prompt types and model sizes
+
+## Documentation Requirements
+- Update README.md as new features are added
+- Document any API changes or new data formats
+- Include usage examples for new features
+- Update TODO.md as tasks are completed
+
+Remember: This project is designed for local, single-developer use initially. Focus on getting core functionality working before adding advanced features like Dockerization or comprehensive testing frameworks. 
