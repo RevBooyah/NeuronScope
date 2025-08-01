@@ -25,6 +25,12 @@ Each task below should be specific enough to complete clearly in 1-2 prompts.
 - [x] Set up initial React pages/routes: Dashboard/Home, Neuron Activations, Neuron Clustering, Reverse Queries.
 - [x] Add Plotly or similar library integration to the React app.
 
+## Model Information System
+- [x] Create comprehensive model information service with architecture details, activation equations, training information.
+- [x] Implement React modal component with tabbed interface for displaying model information.
+- [x] Add model info button to dashboard header with responsive design.
+- [x] Include detailed information about GPT-2 architecture, mathematical equations, training details, and usage guidelines.
+
 ## Visualization Integration (Web UI)
 - [x] Connect backend (Python) neuron activation output data to the React frontend via a simple JSON data exchange.
 - [x] Implement the generalized neuron activation heatmap visualization in the web UI.

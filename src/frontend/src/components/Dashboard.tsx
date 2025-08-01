@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useActivationData } from '../hooks/useActivationData';
 import { ActivationVisualization } from './ActivationVisualization';
+import ModelInfoModal from './ModelInfoModal';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -11,6 +12,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const [selectedPrompt, setSelectedPrompt] = useState<string>('');
   const [selectedLayer, setSelectedLayer] = useState<number>(0);
   const [visualizationType, setVisualizationType] = useState<'heatmap' | 'scatter' | 'summary'>('heatmap');
+  const [showModelInfo, setShowModelInfo] = useState<boolean>(false);
 
   const {
     activationData,
@@ -48,8 +50,19 @@ const Dashboard: React.FC<DashboardProps> = () => {
   return (
     <div className="dashboard">
       <header className="dashboard-header">
-        <h1>🧠 NeuronScope</h1>
-        <p>Interactive visualization platform for exploring neuron activations in transformer models</p>
+        <div className="header-content">
+          <div className="header-text">
+            <h1>🧠 NeuronScope</h1>
+            <p>Interactive visualization platform for exploring neuron activations in transformer models</p>
+          </div>
+          <button 
+            className="model-info-button"
+            onClick={() => setShowModelInfo(true)}
+            title="View model information"
+          >
+            📋 Model Info
+          </button>
+        </div>
       </header>
 
       <div className="dashboard-content">
@@ -156,6 +169,12 @@ const Dashboard: React.FC<DashboardProps> = () => {
           <span className="status-item">🧠 Model: GPT-2</span>
         </div>
       </div>
+
+      <ModelInfoModal
+        isOpen={showModelInfo}
+        onClose={() => setShowModelInfo(false)}
+        modelName="gpt2"
+      />
     </div>
   );
 };
