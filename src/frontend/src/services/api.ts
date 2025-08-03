@@ -83,6 +83,30 @@ class ApiService {
     }
   }
 
+  async addSamplePrompt(prompt: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/samples`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('Added sample prompt:', result);
+      return true;
+    } catch (error) {
+      console.error('Failed to add sample prompt:', error);
+      return false;
+    }
+  }
+
   async generateActivationData(prompt: string): Promise<ActivationData | null> {
     try {
       const response = await fetch(`${this.baseUrl}/api/activations/generate`, {

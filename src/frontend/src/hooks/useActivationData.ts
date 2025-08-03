@@ -9,6 +9,8 @@ export interface UseActivationDataReturn {
   samplePrompts: string[];
   loadActivationData: (filename: string) => Promise<void>;
   generateNewActivation: (prompt: string) => Promise<void>;
+  addSamplePrompt: (prompt: string) => Promise<boolean>;
+  refreshSamplePrompts: () => Promise<void>;
 }
 
 export const useActivationData = (): UseActivationDataReturn => {
@@ -83,6 +85,29 @@ export const useActivationData = (): UseActivationDataReturn => {
     }
   }, []);
 
+  const addSamplePrompt = useCallback(async (prompt: string) => {
+    try {
+      const success = await apiService.addSamplePrompt(prompt);
+      if (success) {
+        // Refresh the sample prompts list
+        await refreshSamplePrompts();
+      }
+      return success;
+    } catch (err) {
+      console.error('Failed to add sample prompt:', err);
+      return false;
+    }
+  }, []);
+
+  const refreshSamplePrompts = useCallback(async () => {
+    try {
+      const prompts = await apiService.getSamplePrompts();
+      setSamplePrompts(prompts);
+    } catch (err) {
+      console.error('Failed to refresh sample prompts:', err);
+    }
+  }, []);
+
   return {
     activationData,
     loading,
@@ -90,6 +115,8 @@ export const useActivationData = (): UseActivationDataReturn => {
     availableFiles,
     samplePrompts,
     loadActivationData,
-    generateNewActivation
+    generateNewActivation,
+    addSamplePrompt,
+    refreshSamplePrompts
   };
 }; 

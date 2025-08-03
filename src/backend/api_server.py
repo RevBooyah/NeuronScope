@@ -297,6 +297,47 @@ def get_sample_prompts():
         logger.error(f"Failed to get sample prompts: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/samples', methods=['POST'])
+def add_sample_prompt():
+    """Add a new sample prompt."""
+    try:
+        data = request.get_json()
+        new_prompt = data.get('prompt', '').strip()
+        
+        if not new_prompt:
+            return jsonify({'error': 'prompt is required'}), 400
+        
+        # Load existing samples
+        samples_file = Path('samples.json')
+        if samples_file.exists():
+            with open(samples_file, 'r') as f:
+                samples = json.load(f)
+        else:
+            samples = []
+        
+        # Check if prompt already exists
+        if new_prompt in samples:
+            return jsonify({'error': 'Prompt already exists in samples'}), 400
+        
+        # Add new prompt
+        samples.append(new_prompt)
+        
+        # Save updated samples
+        with open(samples_file, 'w') as f:
+            json.dump(samples, f, indent=2)
+        
+        logger.info(f"Added new sample prompt: {new_prompt}")
+        
+        return jsonify({
+            'message': 'Prompt added successfully',
+            'prompt': new_prompt,
+            'total_samples': len(samples)
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to add sample prompt: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 # Serve static files from the data directory
 @app.route('/data/<path:filename>')
 def serve_data_file(filename):

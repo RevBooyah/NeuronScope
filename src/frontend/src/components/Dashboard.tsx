@@ -13,6 +13,8 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const [selectedLayer, setSelectedLayer] = useState<number>(0);
   const [visualizationType, setVisualizationType] = useState<'heatmap' | 'scatter' | 'summary'>('heatmap');
   const [showModelInfo, setShowModelInfo] = useState<boolean>(false);
+  const [customPrompt, setCustomPrompt] = useState<string>('');
+  const [showCustomPromptInput, setShowCustomPromptInput] = useState<boolean>(false);
 
   const {
     activationData,
@@ -21,7 +23,8 @@ const Dashboard: React.FC<DashboardProps> = () => {
     availableFiles,
     samplePrompts,
     loadActivationData,
-    generateNewActivation
+    generateNewActivation,
+    addSamplePrompt
   } = useActivationData();
 
   const handlePromptChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -47,6 +50,26 @@ const Dashboard: React.FC<DashboardProps> = () => {
     }
   };
 
+  const handleCustomPromptSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (customPrompt.trim()) {
+      generateNewActivation(customPrompt.trim());
+      setCustomPrompt('');
+      setShowCustomPromptInput(false);
+    }
+  };
+
+  const handleAddToSamples = async () => {
+    if (customPrompt.trim() && !samplePrompts.includes(customPrompt.trim())) {
+      const success = await addSamplePrompt(customPrompt.trim());
+      if (success) {
+        alert('Prompt added to samples successfully!');
+      } else {
+        alert('Failed to add prompt to samples. Please try again.');
+      }
+    }
+  };
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -68,17 +91,33 @@ const Dashboard: React.FC<DashboardProps> = () => {
       <div className="dashboard-content">
         <div className="control-panel">
           <div className="control-group">
-            <label htmlFor="file-select">Select Data File:</label>
+            <label htmlFor="file-select">
+              Select Data File:
+              <span className="help-icon" title="Data files should be placed in the 'data/activations/' directory on the server. Files should be in JSON format with activation data.">
+                ℹ️
+              </span>
+            </label>
             <select 
               id="file-select" 
               onChange={handleFileChange}
               className="control-select"
             >
               <option value="">Choose a file...</option>
-              {availableFiles.map((filename, index) => (
-                <option key={index} value={filename}>{filename}</option>
-              ))}
+              {availableFiles.length > 0 ? (
+                availableFiles.map((filename, index) => (
+                  <option key={index} value={filename}>{filename}</option>
+                ))
+              ) : (
+                <option value="" disabled>No files available</option>
+              )}
             </select>
+            {availableFiles.length === 0 && (
+              <div className="help-text">
+                <p>📁 No activation files found.</p>
+                <p>Place JSON activation files in: <code>data/activations/</code></p>
+                <p>Or use the prompt options below to generate new data.</p>
+              </div>
+            )}
           </div>
 
           <div className="control-group">
@@ -94,6 +133,45 @@ const Dashboard: React.FC<DashboardProps> = () => {
                 <option key={index} value={prompt}>{prompt}</option>
               ))}
             </select>
+          </div>
+
+          <div className="control-group">
+            <label htmlFor="custom-prompt">
+              Custom Prompt:
+              <button 
+                type="button"
+                className="toggle-custom-btn"
+                onClick={() => setShowCustomPromptInput(!showCustomPromptInput)}
+              >
+                {showCustomPromptInput ? '−' : '+'}
+              </button>
+            </label>
+            {showCustomPromptInput && (
+              <form onSubmit={handleCustomPromptSubmit} className="custom-prompt-form">
+                <textarea
+                  id="custom-prompt"
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  placeholder="Enter your custom prompt here..."
+                  className="custom-prompt-input"
+                  rows={3}
+                />
+                <div className="custom-prompt-actions">
+                  <button type="submit" className="generate-btn" disabled={!customPrompt.trim()}>
+                    Generate Activation
+                  </button>
+                  <button 
+                    type="button" 
+                    className="add-to-samples-btn"
+                    onClick={handleAddToSamples}
+                    disabled={!customPrompt.trim() || samplePrompts.includes(customPrompt.trim())}
+                    title="Add this prompt to the sample list"
+                  >
+                    Add to Samples
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
 
           <div className="control-group">
