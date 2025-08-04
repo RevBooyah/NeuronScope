@@ -1,10 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import { apiService } from '../services/api';
 import './ModelInfoModal.css';
 
 interface ModelInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
   modelName?: string;
+}
+
+interface ModelInfo {
+  name: string;
+  description: string;
+  family: string;
+  layers: number;
+  hidden_size: number;
+  num_attention_heads: number;
+  size_category: string;
+  recommended: boolean;
+  requires_auth?: boolean;
+  loaded?: boolean;
+  device?: string;
 }
 
 const ModelInfoModal: React.FC<ModelInfoModalProps> = ({ 
@@ -14,14 +29,33 @@ const ModelInfoModal: React.FC<ModelInfoModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
+  const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && modelName) {
       setLoading(true);
-      // Simulate loading
-      setTimeout(() => setLoading(false), 500);
+      setError(null);
+      
+      const fetchModelInfo = async () => {
+        try {
+          const info = await apiService.getModelInfo(modelName);
+          if (info) {
+            setModelInfo(info);
+          } else {
+            setError('Failed to load model information');
+          }
+        } catch (err) {
+          setError('Failed to load model information');
+          console.error('Error fetching model info:', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      fetchModelInfo();
     }
-  }, [isOpen]);
+  }, [isOpen, modelName]);
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📊' },
@@ -31,118 +65,191 @@ const ModelInfoModal: React.FC<ModelInfoModalProps> = ({
     { id: 'usage', label: 'Usage', icon: '📋' }
   ];
 
-  const renderOverview = () => (
-    <div className="tab-content">
-      <div className="info-grid">
-        <div className="info-card">
-          <h3>Basic Information</h3>
-          <div className="info-item">
-            <strong>Model:</strong> GPT-2 Small (124M parameters)
-          </div>
-          <div className="info-item">
-            <strong>Parameters:</strong> 124,439,808
-          </div>
-          <div className="info-item">
-            <strong>Layers:</strong> 12
-          </div>
-          <div className="info-item">
-            <strong>Hidden Size:</strong> 768
-          </div>
-          <div className="info-item">
-            <strong>Attention Heads:</strong> 12
-          </div>
+  const renderOverview = () => {
+    if (!modelInfo) {
+      return (
+        <div className="tab-content">
+          <div className="error-message">No model information available</div>
         </div>
+      );
+    }
 
-        <div className="info-card">
-          <h3>Architecture Overview</h3>
-          <div className="info-item">
-            <strong>Type:</strong> GPT-2 (Generative Pre-trained Transformer 2)
-          </div>
-          <div className="info-item">
-            <strong>Architecture:</strong> Transformer Decoder-Only
-          </div>
-          <div className="info-item">
-            <strong>Activation:</strong> GELU (Gaussian Error Linear Unit)
-          </div>
-          <div className="info-item">
-            <strong>Paper:</strong> Language Models are Unsupervised Multitask Learners
-          </div>
-        </div>
+    // Calculate approximate parameters based on model architecture
+    const vocabSize = 50257; // Standard for most models
+    const embeddingParams = vocabSize * modelInfo.hidden_size;
+    const transformerParams = modelInfo.layers * (4 * modelInfo.hidden_size * modelInfo.hidden_size + 2 * modelInfo.hidden_size);
+    const lmHeadParams = vocabSize * modelInfo.hidden_size;
+    const totalParams = embeddingParams + transformerParams + lmHeadParams;
 
-        <div className="info-card">
-          <h3>Performance</h3>
-          <div className="info-item">
-            <strong>Download Size:</strong> ~500MB
-          </div>
-          <div className="info-item">
-            <strong>Memory Usage:</strong> ~500MB RAM
-          </div>
-          <div className="info-item">
-            <strong>Inference Speed:</strong> ~50ms per token (CPU)
-          </div>
-        </div>
-
-        <div className="info-card">
-          <h3>Parameter Distribution</h3>
-          <div className="info-item">
-            <strong>Embeddings:</strong> 38,731,776 (31.1%)
-          </div>
-          <div className="info-item">
-            <strong>Transformer Layers:</strong> 85,056,000 (68.4%)
-          </div>
-          <div className="info-item">
-            <strong>Language Model Head:</strong> 651,264 (0.5%)
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderArchitecture = () => (
-    <div className="tab-content">
-      <div className="info-section">
-        <h3>Model Dimensions</h3>
+    return (
+      <div className="tab-content">
         <div className="info-grid">
-          <div className="info-item">
-            <strong>Embedding Dimension:</strong> 768
+          <div className="info-card">
+            <h3>Basic Information</h3>
+            <div className="info-item">
+              <strong>Model:</strong> {modelInfo.description}
+            </div>
+            <div className="info-item">
+              <strong>Family:</strong> {modelInfo.family.toUpperCase()}
+            </div>
+            <div className="info-item">
+              <strong>Parameters:</strong> ~{(totalParams / 1e6).toFixed(1)}M
+            </div>
+            <div className="info-item">
+              <strong>Layers:</strong> {modelInfo.layers}
+            </div>
+            <div className="info-item">
+              <strong>Hidden Size:</strong> {modelInfo.hidden_size}
+            </div>
+            <div className="info-item">
+              <strong>Attention Heads:</strong> {modelInfo.num_attention_heads}
+            </div>
+            <div className="info-item">
+              <strong>Size Category:</strong> {modelInfo.size_category}
+            </div>
+            {modelInfo.loaded && (
+              <div className="info-item">
+                <strong>Status:</strong> <span className="status-loaded">✅ Loaded</span>
+              </div>
+            )}
+            {modelInfo.device && (
+              <div className="info-item">
+                <strong>Device:</strong> {modelInfo.device}
+              </div>
+            )}
           </div>
-          <div className="info-item">
-            <strong>Attention Heads:</strong> 12
-          </div>
-          <div className="info-item">
-            <strong>Head Dimension:</strong> 64
-          </div>
-          <div className="info-item">
-            <strong>MLP Intermediate Size:</strong> 3072
-          </div>
-          <div className="info-item">
-            <strong>Total Layers:</strong> 12
-          </div>
-          <div className="info-item">
-            <strong>Vocabulary Size:</strong> 50,257
-          </div>
-          <div className="info-item">
-            <strong>Max Sequence Length:</strong> 1024
-          </div>
-        </div>
-      </div>
 
-      <div className="info-section">
-        <h3>Layer Structure</h3>
-        <div className="info-card">
-          <h4>Each Transformer Block Contains:</h4>
-          <ul>
-            <li>Layer Normalization</li>
-            <li>Multi-Head Self-Attention</li>
-            <li>Residual Connection</li>
-            <li>Layer Normalization</li>
-            <li>Feed-Forward Network (MLP)</li>
-            <li>Residual Connection</li>
-          </ul>
+          <div className="info-card">
+            <h3>Architecture Overview</h3>
+            <div className="info-item">
+              <strong>Type:</strong> {modelInfo.family.toUpperCase()} Transformer
+            </div>
+            <div className="info-item">
+              <strong>Architecture:</strong> Transformer Decoder-Only
+            </div>
+            <div className="info-item">
+              <strong>Activation:</strong> GELU (Gaussian Error Linear Unit)
+            </div>
+            <div className="info-item">
+              <strong>Position Encoding:</strong> Learned
+            </div>
+            {modelInfo.requires_auth && (
+              <div className="info-item">
+                <strong>Authentication:</strong> <span className="auth-required">🔒 Required</span>
+              </div>
+            )}
+          </div>
+
+          <div className="info-card">
+            <h3>Performance</h3>
+            <div className="info-item">
+              <strong>Download Size:</strong> ~{(totalParams * 2 / 1e6).toFixed(0)}MB
+            </div>
+            <div className="info-item">
+              <strong>Memory Usage:</strong> ~{(totalParams * 2 / 1e6).toFixed(0)}MB RAM
+            </div>
+            <div className="info-item">
+              <strong>Inference Speed:</strong> ~{(totalParams / 1e6 * 10).toFixed(0)}ms per token (CPU)
+            </div>
+            <div className="info-item">
+              <strong>Recommended:</strong> {modelInfo.recommended ? '✅ Yes' : '❌ No'}
+            </div>
+          </div>
+
+          <div className="info-card">
+            <h3>Parameter Distribution</h3>
+            <div className="info-item">
+              <strong>Embeddings:</strong> ~{(embeddingParams / 1e6).toFixed(1)}M ({(embeddingParams / totalParams * 100).toFixed(1)}%)
+            </div>
+            <div className="info-item">
+              <strong>Transformer Layers:</strong> ~{(transformerParams / 1e6).toFixed(1)}M ({(transformerParams / totalParams * 100).toFixed(1)}%)
+            </div>
+            <div className="info-item">
+              <strong>Language Model Head:</strong> ~{(lmHeadParams / 1e6).toFixed(1)}M ({(lmHeadParams / totalParams * 100).toFixed(1)}%)
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  const renderArchitecture = () => {
+    if (!modelInfo) {
+      return (
+        <div className="tab-content">
+          <div className="error-message">No model information available</div>
+        </div>
+      );
+    }
+
+    const headDimension = Math.floor(modelInfo.hidden_size / modelInfo.num_attention_heads);
+    const mlpIntermediateSize = modelInfo.hidden_size * 4; // Standard ratio
+
+    return (
+      <div className="tab-content">
+        <div className="info-section">
+          <h3>Model Dimensions</h3>
+          <div className="info-grid">
+            <div className="info-item">
+              <strong>Embedding Dimension:</strong> {modelInfo.hidden_size}
+            </div>
+            <div className="info-item">
+              <strong>Attention Heads:</strong> {modelInfo.num_attention_heads}
+            </div>
+            <div className="info-item">
+              <strong>Head Dimension:</strong> {headDimension}
+            </div>
+            <div className="info-item">
+              <strong>MLP Intermediate Size:</strong> {mlpIntermediateSize}
+            </div>
+            <div className="info-item">
+              <strong>Total Layers:</strong> {modelInfo.layers}
+            </div>
+            <div className="info-item">
+              <strong>Vocabulary Size:</strong> 50,257
+            </div>
+            <div className="info-item">
+              <strong>Max Sequence Length:</strong> {modelInfo.family === 'gpt2' ? '1024' : '2048'}
+            </div>
+            <div className="info-item">
+              <strong>Model Family:</strong> {modelInfo.family.toUpperCase()}
+            </div>
+          </div>
+        </div>
+
+        <div className="info-section">
+          <h3>Layer Structure</h3>
+          <div className="info-card">
+            <h4>Each Transformer Block Contains:</h4>
+            <ul>
+              <li>Layer Normalization</li>
+              <li>Multi-Head Self-Attention</li>
+              <li>Residual Connection</li>
+              <li>Layer Normalization</li>
+              <li>Feed-Forward Network (MLP)</li>
+              <li>Residual Connection</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="info-section">
+          <h3>Architecture Details</h3>
+          <div className="info-card">
+            <h4>Key Features:</h4>
+            <ul>
+              <li>Decoder-only transformer architecture</li>
+              <li>Pre-norm layer normalization</li>
+              <li>GELU activation functions</li>
+              <li>Learned positional embeddings</li>
+              {modelInfo.family === 'llama2' && <li>Group-query attention (GQA)</li>}
+              {modelInfo.family === 'mistral' && <li>Sliding window attention</li>}
+              {modelInfo.family === 'phi' && <li>Parallel attention and MLP</li>}
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderEquations = () => (
     <div className="tab-content">
@@ -361,6 +468,24 @@ const ModelInfoModal: React.FC<ModelInfoModalProps> = ({
             <div className="loading">
               <div className="spinner"></div>
               <p>Loading model information...</p>
+            </div>
+          ) : error ? (
+            <div className="error">
+              <p>❌ {error}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                style={{ 
+                  marginTop: '16px', 
+                  padding: '8px 16px', 
+                  background: '#3b82f6', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: '4px', 
+                  cursor: 'pointer' 
+                }}
+              >
+                Retry
+              </button>
             </div>
           ) : (
             renderTabContent()

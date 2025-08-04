@@ -35,9 +35,10 @@ Each task below should be specific enough to complete clearly in 1-2 prompts.
 - [x] Connect backend (Python) neuron activation output data to the React frontend via a simple JSON data exchange.
 - [x] Implement the generalized neuron activation heatmap visualization in the web UI.
 - [x] Implement scatter plot visualization for neuron clustering in the web UI.
+- [ ] Add basic layer and network visualiztions for weights and biases, including histograms and other statistics for each layer.
 
 ## Reverse Neuron Activation Queries
-- [ ] Create backend script/function to query neuron data for top tokens/n-grams activating specific neurons.
+- [x] Create backend script/function to query neuron data for top tokens/n-grams activating specific neurons.
 - [ ] Implement initial simple query UI on React frontend to demonstrate reverse activation querying.
 
 ## Advanced Neuron Analysis (Research Paper Features)
@@ -84,15 +85,23 @@ Each task below should be specific enough to complete clearly in 1-2 prompts.
 - [ ] Add template library with pre-built analysis procedures.
 - [ ] Build UI for selecting and customizing analysis templates.
 
-### Multi-Model Comparison
+## Multi-Model Support
+- [x] Extend model loading system to support multiple architectures (GPT-2, LLaMA, Mistral, Phi, Gemma, etc.).
+- [x] Implement model switching functionality with memory management.
+- [x] Create multi-model selection UI with model information and memory usage.
+- [x] Build comprehensive model loader with quantization support.
+- [ ] Implement cross-model neuron comparison algorithms.
+- [ ] Create multi-model visualization components for comparative analysis.
+
+## Multi-Model Comparison
 - [ ] Extend model loading system to support multiple architectures (Claude, LLaMA, etc.).
 - [ ] Implement cross-model neuron comparison algorithms.
 - [ ] Create multi-model visualization components for comparative analysis.
 - [ ] Build UI for selecting and comparing different models.
 
 ## Neuron Clustering
-- [ ] Implement clustering of neurons (K-Means initially) in Python backend.
-- [ ] Export clustering results (cluster assignments, cluster centers) in structured format for UI consumption.
+- [x] Implement clustering of neurons (K-Means initially) in Python backend.
+- [x] Export clustering results (cluster assignments, cluster centers) in structured format for UI consumption.
 - [ ] Visualize neuron clusters interactively in web UI (scatter plot, color-coded clusters).
 
 ## Drift Analysis Preparation

@@ -21,7 +21,7 @@ from pathlib import Path
 backend_dir = Path(__file__).parent
 sys.path.insert(0, str(backend_dir))
 
-from models.gpt2_loader import GPT2ModelLoader
+from models.gpt2_loader import MultiModelLoader
 from activations.extractor import ActivationExtractor
 from clustering.neuron_clustering import NeuronClusterer
 from queries.reverse_queries import ReverseQueryEngine
@@ -40,12 +40,13 @@ model_loader = None  # Will be initialized when needed
 extractor = None  # Will be initialized when needed
 clusterer = None  # Will be initialized when needed
 query_engine = None  # Will be initialized when needed
+current_model = 'gpt2'  # Default model
 
 def get_model_loader():
     """Get or create the model loader."""
     global model_loader
     if model_loader is None:
-        model_loader = GPT2ModelLoader()
+        model_loader = MultiModelLoader(use_quantization=True)  # Enable quantization for large models
     return model_loader
 
 def get_clusterer():
@@ -336,6 +337,126 @@ def add_sample_prompt():
         
     except Exception as e:
         logger.error(f"Failed to add sample prompt: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/models', methods=['GET'])
+def get_available_models():
+    """Get list of available models."""
+    try:
+        model_loader = get_model_loader()
+        models = model_loader.get_available_models()
+        recommended = model_loader.get_recommended_models()
+        
+        return jsonify({
+            'models': models,
+            'recommended': recommended,
+            'current_model': current_model,
+            'memory_usage': model_loader.get_memory_usage()
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to get available models: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/models/<model_name>', methods=['GET'])
+def get_model_info(model_name: str):
+    """Get detailed information about a specific model."""
+    try:
+        model_loader = get_model_loader()
+        info = model_loader.get_model_info(model_name)
+        
+        return jsonify(info)
+        
+    except Exception as e:
+        logger.error(f"Failed to get model info: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/models/switch', methods=['POST'])
+def switch_model():
+    """Switch to a different model."""
+    global current_model, extractor, clusterer, query_engine
+    
+    try:
+        data = request.get_json()
+        new_model = data.get('model_name', '').strip()
+        
+        if not new_model:
+            return jsonify({'error': 'model_name is required'}), 400
+        
+        model_loader = get_model_loader()
+        
+        # Check if model is supported
+        if new_model not in model_loader.get_available_models():
+            available = list(model_loader.get_available_models().keys())
+            return jsonify({'error': f'Model not supported. Available: {available}'}), 400
+        
+        logger.info(f"Switching from {current_model} to {new_model}")
+        
+        # Load the new model
+        model, tokenizer = model_loader.load_model(new_model)
+        
+        # Update current model
+        current_model = new_model
+        
+        # Reset components that depend on the model
+        extractor = None
+        clusterer = None
+        query_engine = None
+        
+        # Get model info
+        model_info = model_loader.get_model_info(new_model)
+        
+        return jsonify({
+            'message': f'Successfully switched to {new_model}',
+            'current_model': current_model,
+            'model_info': model_info,
+            'memory_usage': model_loader.get_memory_usage()
+        })
+        
+    except Exception as e:
+        error_msg = str(e)
+        logger.error(f"Failed to switch model: {error_msg}")
+        
+        # Provide more specific error messages
+        if "authentication" in error_msg.lower() or "hf_token" in error_msg.lower():
+            return jsonify({
+                'error': f'Authentication required for {new_model}. Please set HF_TOKEN environment variable or login with huggingface-cli.',
+                'details': error_msg,
+                'requires_auth': True
+            }), 401
+        elif "gated repo" in error_msg.lower() or "access" in error_msg.lower():
+            return jsonify({
+                'error': f'Access denied for {new_model}. This model requires special access permissions.',
+                'details': error_msg,
+                'requires_auth': True
+            }), 403
+        elif "trust_remote_code" in error_msg.lower():
+            return jsonify({
+                'error': f'Failed to load {new_model}. This model requires custom code execution.',
+                'details': error_msg
+            }), 500
+        elif "bitsandbytes" in error_msg.lower():
+            return jsonify({
+                'error': f'Failed to load {new_model}. Quantization library not properly installed.',
+                'details': error_msg
+            }), 500
+        else:
+            return jsonify({
+                'error': f'Failed to switch to {new_model}',
+                'details': error_msg
+            }), 500
+
+@app.route('/api/models/memory', methods=['GET'])
+def get_memory_usage():
+    """Get current memory usage information."""
+    try:
+        model_loader = get_model_loader()
+        memory_info = model_loader.get_memory_usage()
+        
+        return jsonify(memory_info)
+        
+    except Exception as e:
+        logger.error(f"Failed to get memory usage: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # Serve static files from the data directory

@@ -25,7 +25,7 @@ class ApiService {
 
   constructor() {
     // Connect to Flask backend API server
-    this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
   }
 
   async getAvailableActivations(): Promise<string[]> {
@@ -277,6 +277,86 @@ class ApiService {
     } catch (error) {
       console.error('Health check failed:', error);
       return false;
+    }
+  }
+
+  async getAvailableModels(): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/models`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Failed to fetch available models:', error);
+      return { models: {}, recommended: {}, current_model: 'gpt2' };
+    }
+  }
+
+  async getModelInfo(modelName: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/models/${encodeURIComponent(modelName)}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Failed to get model info:', error);
+      return null;
+    }
+  }
+
+  async switchModel(modelName: string): Promise<{ success: boolean; error?: string; details?: string; requiresAuth?: boolean }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/models/switch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ model_name: modelName }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return {
+          success: false,
+          error: errorData.error || `HTTP error! status: ${response.status}`,
+          details: errorData.details,
+          requiresAuth: errorData.requires_auth || false
+        };
+      }
+      
+      const result = await response.json();
+      console.log('Model switched:', result);
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to switch model:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
+    }
+  }
+
+  async getMemoryUsage(): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/models/memory`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Failed to get memory usage:', error);
+      return {};
     }
   }
 }

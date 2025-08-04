@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useActivationData } from '../hooks/useActivationData';
 import { ActivationVisualization } from './ActivationVisualization';
 import ModelInfoModal from './ModelInfoModal';
+import ModelSelector from './ModelSelector';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -15,6 +16,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const [showModelInfo, setShowModelInfo] = useState<boolean>(false);
   const [customPrompt, setCustomPrompt] = useState<string>('');
   const [showCustomPromptInput, setShowCustomPromptInput] = useState<boolean>(false);
+  const [currentModel, setCurrentModel] = useState<string>('gpt2');
 
   const {
     activationData,
@@ -70,6 +72,12 @@ const Dashboard: React.FC<DashboardProps> = () => {
     }
   };
 
+  const handleModelChange = (modelName: string) => {
+    setCurrentModel(modelName);
+    // Reset activation data when model changes
+    // The user will need to regenerate activations with the new model
+  };
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -90,6 +98,8 @@ const Dashboard: React.FC<DashboardProps> = () => {
 
       <div className="dashboard-content">
         <div className="control-panel">
+          <ModelSelector onModelChange={handleModelChange} />
+          
           <div className="control-group">
             <label htmlFor="file-select">
               Select Data File:
@@ -244,14 +254,14 @@ const Dashboard: React.FC<DashboardProps> = () => {
         <div className="status-info">
           <span className="status-item">✅ Backend: Connected</span>
           <span className="status-item">📊 Visualizations: Ready</span>
-          <span className="status-item">🧠 Model: GPT-2</span>
+          <span className="status-item">🧠 Model: {currentModel}</span>
         </div>
       </div>
 
       <ModelInfoModal
         isOpen={showModelInfo}
         onClose={() => setShowModelInfo(false)}
-        modelName="gpt2"
+        modelName={currentModel}
       />
     </div>
   );

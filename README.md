@@ -1,6 +1,6 @@
 # NeuronScope
 
-**NeuronScope** is an open-source research and visualization platform designed for exploring neuron activations inside transformer models (initially GPT-2, with support for LLaMA planned later). It aims to provide interactive, intuitive visual insights into how transformer model neurons activate, cluster, drift, and respond to various inputs.
+**NeuronScope** is an open-source research and visualization platform designed for exploring neuron activations inside transformer models. It supports multiple modern architectures including GPT-2, LLaMA, Mistral, Phi, Gemma, and more. It aims to provide interactive, intuitive visual insights into how transformer model neurons activate, cluster, drift, and respond to various inputs.
 
 ![NeuronScope Dashboard](images/neuronscope_1.png)
 
@@ -33,6 +33,11 @@
 - Provide supplementary CLI tools for batch processing and automated analysis.
 
 ## Key Features (MVP)
+- **Multi-Model Support**
+  - Support for 12+ modern transformer models (GPT-2, LLaMA, Mistral, Phi, Gemma, etc.)
+  - Interactive model switching with real-time memory monitoring
+  - 4-bit quantization for large models to reduce memory usage
+  - Model caching and optimized loading
 - **Neuron Activation Visualization**
   - Generalized neuron activation heatmaps.
   - Interactive scatter plots and dimensionality reductions (e.g., PCA, t-SNE).
@@ -52,11 +57,14 @@
 **Phase 2 Complete!** NeuronScope now has a fully functional backend and interactive frontend:
 
 ### ✅ **Implemented Features**
+- **Multi-Model Support**: Comprehensive support for GPT-2, LLaMA, Mistral, Phi, Gemma, and more
+- **Model Switching UI**: Interactive model selector with real-time memory monitoring
+- **Quantization Support**: 4-bit quantization for large models to optimize memory usage
 - **GPT-2 Model Integration**: Load and extract activations from GPT-2 models
 - **Static Visualizations**: Heatmaps, scatter plots, and statistical summaries
 - **React Frontend**: Modern, responsive dashboard with interactive controls
 - **Data Integration**: Load and visualize real activation data
-- **Multi-Layer Analysis**: Explore activations across all 12 GPT-2 layers
+- **Multi-Layer Analysis**: Explore activations across all model layers
 
 ### 🔄 **In Development**
 - **Clustering Algorithms**: K-Means clustering of neurons
@@ -64,9 +72,41 @@
 - **Advanced Visualizations**: Polysemantic neuron detection
 - **Backend API**: HTTP API for real-time data generation
 
+## 🧠 Supported Models
+
+NeuronScope supports a wide range of modern transformer models, organized by size and use case:
+
+### **🟢 Tiny Models (1-2B parameters)**
+- **TinyLlama/TinyLlama-1.1B-Chat-v1.0**: Fast testing, limited resources
+- **google/gemma-2b**: Google's efficient 2B parameter model
+
+### **🔵 Small Models (2-3B parameters)**
+- **microsoft/phi-2**: Microsoft's powerful 2.7B parameter model
+- **Qwen/Qwen-1_8B**: Alibaba's 1.8B parameter model
+- **gpt2**: OpenAI's original 124M parameter model (baseline)
+
+### **🟡 Medium Models (7B parameters)**
+- **mistralai/Mistral-7B-v0.1**: Excellent performance, smaller size
+- **mistralai/Mistral-7B-Instruct-v0.2**: Instruction-tuned version
+- **meta-llama/Llama-2-7b-hf**: Meta's 7B parameter model
+- **google/gemma-7b**: Google's 7B parameter model
+
+### **🔴 Large Models (13B+ parameters)**
+- **meta-llama/Llama-2-13b-hf**: Maximum performance, requires more resources
+- **gpt2-medium**: 355M parameters
+- **gpt2-large**: 774M parameters
+
+### **Key Benefits**
+- **Memory Efficient**: 4-bit quantization support for large models
+- **Easy Switching**: Seamless model switching with real-time memory monitoring
+- **Modern Architectures**: Access to the latest open-source models
+- **Scalable**: Easy to add new models in the future
+- **Performance**: Caching and optimized loading
+
 ## Technology Stack
 - **Backend/Core:** Python (PyTorch, NumPy, Pandas, scikit-learn)
 - **Frontend/Web UI:** React with interactive plotting libraries (Plotly, D3.js)
+- **Model Loading:** Transformers library with quantization support (bitsandbytes)
 - **Visualization:** Initial static visualizations, incrementally enhanced by animations.
 - **Optional Optimization:** C or Cython only if substantial (>5x) performance gains identified.
 
@@ -90,7 +130,11 @@ python scripts/setup_models.py
 # Extract sample activations
 python scripts/extract_activations.py
 
-# Start the React frontend
+# Start the backend API server
+cd src/backend
+python api_server.py
+
+# In another terminal, start the React frontend
 cd src/frontend
 npm install
 npm start
@@ -98,10 +142,58 @@ npm start
 
 The application will be available at `http://localhost:3000`
 
+### **🆕 New Multi-Model Features**
+- **Model Selector**: Use the new model selector in the control panel to switch between different models
+- **Memory Monitoring**: Real-time GPU memory usage display
+- **Quantization**: Large models automatically use 4-bit quantization to save memory
+- **Model Information**: Detailed model specs and architecture information
+- **Recommended Models**: Start with the recommended models for your use case
+
+## 🎯 Model Recommendations & Usage
+
+### **Getting Started**
+- **Begin with GPT-2**: Perfect for learning and testing (124M parameters)
+- **Try Phi-2**: Excellent balance of performance and speed (2.7B parameters)
+- **Experiment with TinyLlama**: Great for quick testing (1.1B parameters)
+
+### **Production Use**
+- **Mistral 7B**: Excellent performance for most tasks
+- **LLaMA 2 7B**: Proven architecture with good performance
+- **Gemma 7B**: Google's efficient 7B model
+
+### **Advanced Research**
+- **LLaMA 2 13B**: Maximum performance for complex analysis
+- **Multiple Models**: Compare neuron behaviors across different architectures
+
+### **Memory Considerations**
+- **Tiny/Small Models**: 2-4GB GPU memory
+- **Medium Models**: 8-16GB GPU memory (with quantization)
+- **Large Models**: 16GB+ GPU memory (with quantization)
+
 ## Project Workflow
-- Start with GPT-2 for initial development and quick prototyping. LLaMA once things are stabalized.
+- Start with GPT-2 for initial development and quick prototyping.
 - Implement a web-first UI/UX with minimal dependencies.
-- Incrementally introduce advanced visualizations, animations, and additional model support (LLaMA, Mistral, etc.).
+- Incrementally introduce advanced visualizations, animations, and additional model support.
+- Use quantization for large models to optimize memory usage.
+
+## 🔧 Troubleshooting
+
+### **Model Loading Issues**
+- **Import Errors**: Make sure you have the latest transformers library: `pip install --upgrade transformers`
+- **Memory Issues**: Use quantization for large models or try smaller models first
+- **Authentication Required**: Some models (LLaMA) require Hugging Face authentication
+  - Set `HF_TOKEN` environment variable or use `huggingface-cli login`
+
+### **Performance Tips**
+- **Start Small**: Begin with GPT-2 or TinyLlama for testing
+- **Use Quantization**: Large models automatically use 4-bit quantization
+- **Monitor Memory**: Check the memory usage display in the model selector
+- **Clear Cache**: Restart the server to clear model cache if needed
+
+### **Common Issues**
+- **Port Conflicts**: Make sure ports 3000 (frontend) and 5000 (backend) are available
+- **Dependencies**: Install all requirements: `pip install -r requirements.txt`
+- **Model Downloads**: First-time model loading may take time to download
 
 ## Contributions & Collaboration
 Initially, NeuronScope will be built for local, single-developer use. Contributions, Dockerization, comprehensive documentation, and more robust testing will follow after core MVP stabilization.
