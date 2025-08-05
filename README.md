@@ -51,6 +51,13 @@
 - **Neuron Drift Analysis**
   - Static and animated visuals tracking neuron activations across model fine-tuning checkpoints.
   - Clearly visualize neuron evolution and drift patterns over time.
+- **🧠 Pruning Analysis & Model Optimization**
+  - **Weight Analysis**: Comprehensive analysis of model weights to identify low-magnitude neurons
+  - **Pruning Candidate Detection**: Automatically identify neurons safe to prune with configurable thresholds
+  - **Impact Simulation**: Simulate pruning effects on model behavior before making changes
+  - **Neuron Importance Assessment**: Evaluate critical neurons that should be preserved
+  - **Batch Analysis**: Efficiently analyze multiple pruning candidates with automated recommendations
+  - **Export & Documentation**: Save analysis results for later reference and comparison
 
 ## 🚀 Current Status
 
@@ -65,6 +72,7 @@
 - **React Frontend**: Modern, responsive dashboard with interactive controls
 - **Data Integration**: Load and visualize real activation data
 - **Multi-Layer Analysis**: Explore activations across all model layers
+- **🧠 Pruning Analysis**: Complete weight analysis and pruning impact simulation system
 
 ### 🔄 **In Development**
 - **Clustering Algorithms**: K-Means clustering of neurons
@@ -102,6 +110,16 @@ NeuronScope supports a wide range of modern transformer models, organized by siz
 - **Modern Architectures**: Access to the latest open-source models
 - **Scalable**: Easy to add new models in the future
 - **Performance**: Caching and optimized loading
+
+### **🧠 Pruning Analysis Benefits**
+- **Model Size Reduction**: Identify and remove unnecessary neurons to reduce model size by 10-30%
+- **Inference Speed**: Faster model inference through reduced computational overhead
+- **Memory Efficiency**: Lower memory requirements for deployment and inference
+- **Cost Optimization**: Reduced cloud computing costs for model serving
+- **Deployment Flexibility**: Enable deployment on resource-constrained devices
+- **Performance Preservation**: Maintain model accuracy while reducing size through careful analysis
+- **Research Insights**: Understand which neurons are critical vs. redundant for model behavior
+- **Iterative Optimization**: Support for post-training iterative pruning workflows
 
 ## Technology Stack
 - **Backend/Core:** Python (PyTorch, NumPy, Pandas, scikit-learn)
@@ -149,6 +167,13 @@ The application will be available at `http://localhost:3000`
 - **Model Information**: Detailed model specs and architecture information
 - **Recommended Models**: Start with the recommended models for your use case
 
+### **🧠 Pruning Analysis Features**
+- **Weight Analysis**: Analyze model weights to identify low-magnitude neurons
+- **Pruning Candidates**: Find neurons safe to prune with configurable thresholds
+- **Impact Simulation**: Test pruning effects before making changes
+- **API Endpoints**: Use `/api/pruning/*` endpoints for programmatic access
+- **Export Results**: Save analysis for documentation and comparison
+
 ## 🎯 Model Recommendations & Usage
 
 ### **Getting Started**
@@ -170,6 +195,27 @@ The application will be available at `http://localhost:3000`
 - **Medium Models**: 8-16GB GPU memory (with quantization)
 - **Large Models**: 16GB+ GPU memory (with quantization)
 
+### **🧠 Pruning Analysis Workflow**
+1. **Start with Weight Analysis**: Use `GET /api/pruning/weight-analysis` to understand model sparsity
+2. **Identify Candidates**: Use `GET /api/pruning/candidates?threshold=10.0` to find pruning candidates
+3. **Test Impact**: Use `POST /api/pruning/impact-analysis` to simulate pruning effects
+4. **Batch Analysis**: Use `POST /api/pruning/batch-analysis` for efficient candidate evaluation
+5. **Export Results**: Use `POST /api/pruning/export` to save analysis for documentation
+
+**Example API Usage:**
+```bash
+# Get weight analysis
+curl http://localhost:5001/api/pruning/weight-analysis
+
+# Find pruning candidates (10% threshold)
+curl "http://localhost:5001/api/pruning/candidates?threshold=10.0"
+
+# Test pruning impact
+curl -X POST http://localhost:5001/api/pruning/impact-analysis \
+  -H "Content-Type: application/json" \
+  -d '{"layer_index": 0, "neuron_indices": [0,1,2], "input_text": "Hello world"}'
+```
+
 ## Project Workflow
 - Start with GPT-2 for initial development and quick prototyping.
 - Implement a web-first UI/UX with minimal dependencies.
@@ -189,6 +235,7 @@ The application will be available at `http://localhost:3000`
 - **Use Quantization**: Large models automatically use 4-bit quantization
 - **Monitor Memory**: Check the memory usage display in the model selector
 - **Clear Cache**: Restart the server to clear model cache if needed
+- **Pruning Analysis**: Pruning analysis operations may take 30-120 seconds - this is normal for large models
 
 ### **Common Issues**
 - **Port Conflicts**: Make sure ports 3000 (frontend) and 5000 (backend) are available
