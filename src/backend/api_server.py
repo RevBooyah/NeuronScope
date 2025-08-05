@@ -26,6 +26,7 @@ from activations.extractor import ActivationExtractor
 from clustering.neuron_clustering import NeuronClusterer
 from queries.reverse_queries import ReverseQueryEngine
 from utils.data_io import DataIO
+from pruning import WeightAnalyzer, PruningImpactAnalyzer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -40,6 +41,8 @@ model_loader = None  # Will be initialized when needed
 extractor = None  # Will be initialized when needed
 clusterer = None  # Will be initialized when needed
 query_engine = None  # Will be initialized when needed
+weight_analyzer = None  # Will be initialized when needed
+pruning_analyzer = None  # Will be initialized when needed
 current_model = 'gpt2'  # Default model
 
 def get_model_loader():
@@ -70,6 +73,22 @@ def get_extractor():
         model, tokenizer = get_model_loader().load_model('gpt2')
         extractor = ActivationExtractor(model, tokenizer)
     return extractor
+
+def get_weight_analyzer():
+    """Get or create the weight analyzer."""
+    global weight_analyzer
+    if weight_analyzer is None:
+        model, _ = get_model_loader().load_model(current_model)
+        weight_analyzer = WeightAnalyzer(model)
+    return weight_analyzer
+
+def get_pruning_analyzer():
+    """Get or create the pruning impact analyzer."""
+    global pruning_analyzer
+    if pruning_analyzer is None:
+        model, tokenizer = get_model_loader().load_model(current_model)
+        pruning_analyzer = PruningImpactAnalyzer(model, tokenizer)
+    return pruning_analyzer
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -402,6 +421,8 @@ def switch_model():
         extractor = None
         clusterer = None
         query_engine = None
+        weight_analyzer = None
+        pruning_analyzer = None
         
         # Get model info
         model_info = model_loader.get_model_info(new_model)
@@ -457,6 +478,164 @@ def get_memory_usage():
         
     except Exception as e:
         logger.error(f"Failed to get memory usage: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Pruning Analysis Endpoints
+
+@app.route('/api/pruning/weight-analysis', methods=['GET'])
+def get_weight_analysis():
+    """Get comprehensive weight analysis for the current model."""
+    try:
+        analyzer = get_weight_analyzer()
+        sparsity_analysis = analyzer.get_sparsity_analysis()
+        
+        return jsonify(sparsity_analysis)
+        
+    except Exception as e:
+        logger.error(f"Failed to get weight analysis: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pruning/candidates', methods=['GET'])
+def get_pruning_candidates():
+    """Get pruning candidates for the current model."""
+    try:
+        analyzer = get_weight_analyzer()
+        threshold = request.args.get('threshold', 10.0, type=float)
+        
+        candidates = analyzer.identify_pruning_candidates(threshold_percentile=threshold)
+        
+        return jsonify({
+            'candidates': [
+                {
+                    'layer_index': c.layer_index,
+                    'neuron_index': c.neuron_index,
+                    'weight_magnitude': float(c.weight_magnitude),
+                    'weight_rank': c.weight_rank,
+                    'is_pruning_candidate': c.is_pruning_candidate,
+                    'pruning_score': float(c.pruning_score)
+                }
+                for c in candidates
+            ],
+            'total_candidates': len(candidates),
+            'threshold_percentile': threshold
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to get pruning candidates: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pruning/impact-analysis', methods=['POST'])
+def analyze_pruning_impact():
+    """Analyze the impact of pruning specific neurons."""
+    try:
+        data = request.get_json()
+        layer_index = data.get('layer_index', type=int)
+        neuron_indices = data.get('neuron_indices', [])
+        input_text = data.get('input_text', 'Hello world')
+        
+        if layer_index is None:
+            return jsonify({'error': 'layer_index is required'}), 400
+        
+        if not neuron_indices:
+            return jsonify({'error': 'neuron_indices is required'}), 400
+        
+        analyzer = get_pruning_analyzer()
+        impact = analyzer.simulate_neuron_pruning(layer_index, neuron_indices, input_text)
+        
+        return jsonify({
+            'impact_score': float(impact.impact_score),
+            'mean_change': float(impact.mean_change),
+            'max_change': float(impact.max_change),
+            'affected_neurons': impact.affected_neurons,
+            'safe_to_prune': impact.impact_score < 0.1
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to analyze pruning impact: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pruning/neuron-importance', methods=['POST'])
+def analyze_neuron_importance():
+    """Analyze the importance of neurons in a specific layer."""
+    try:
+        data = request.get_json()
+        layer_index = data.get('layer_index', type=int)
+        input_texts = data.get('input_texts', ['Hello world', 'The quick brown fox'])
+        
+        if layer_index is None:
+            return jsonify({'error': 'layer_index is required'}), 400
+        
+        analyzer = get_pruning_analyzer()
+        importance_scores = analyzer.analyze_neuron_importance(input_texts, layer_index)
+        
+        return jsonify({
+            'importance_scores': [
+                {
+                    'layer_index': i.layer_index,
+                    'neuron_index': i.neuron_index,
+                    'activation_magnitude': float(i.activation_magnitude),
+                    'activation_variance': float(i.activation_variance),
+                    'impact_score': float(i.impact_score),
+                    'is_critical': i.is_critical
+                }
+                for i in importance_scores
+            ],
+            'total_neurons': len(importance_scores),
+            'critical_neurons': len([i for i in importance_scores if i.is_critical])
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to analyze neuron importance: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pruning/batch-analysis', methods=['POST'])
+def batch_pruning_analysis():
+    """Perform batch analysis of pruning candidates."""
+    try:
+        data = request.get_json()
+        pruning_candidates = data.get('pruning_candidates', [])
+        input_texts = data.get('input_texts', ['Hello world'])
+        batch_size = data.get('batch_size', 10)
+        
+        if not pruning_candidates:
+            return jsonify({'error': 'pruning_candidates is required'}), 400
+        
+        analyzer = get_pruning_analyzer()
+        results = analyzer.batch_pruning_analysis(input_texts, pruning_candidates, batch_size)
+        
+        return jsonify(results)
+        
+    except Exception as e:
+        logger.error(f"Failed to perform batch pruning analysis: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pruning/export', methods=['POST'])
+def export_pruning_analysis():
+    """Export pruning analysis results to JSON file."""
+    try:
+        data = request.get_json()
+        analysis_type = data.get('type', 'weight')  # 'weight' or 'impact'
+        
+        if analysis_type == 'weight':
+            analyzer = get_weight_analyzer()
+            output_path = data_io.base_data_dir / 'pruning' / 'weight_analysis.json'
+            output_path.parent.mkdir(exist_ok=True)
+            analyzer.export_weight_analysis(str(output_path))
+            
+            return jsonify({
+                'message': 'Weight analysis exported successfully',
+                'file_path': str(output_path)
+            })
+        
+        elif analysis_type == 'impact':
+            # This would require more complex data to export
+            return jsonify({'error': 'Impact analysis export not yet implemented'}), 501
+        
+        else:
+            return jsonify({'error': 'Invalid analysis type'}), 400
+        
+    except Exception as e:
+        logger.error(f"Failed to export pruning analysis: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # Serve static files from the data directory

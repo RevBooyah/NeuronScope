@@ -43,6 +43,18 @@ Each task below should be specific enough to complete clearly in 1-2 prompts.
 
 ## Advanced Neuron Analysis (Research Paper Features)
 
+### Pruning Analysis Features
+- [x] Implement weight analysis module for identifying low-weight neurons
+- [x] Create pruning candidate identification with configurable thresholds
+- [x] Add pruning impact simulation and analysis
+- [x] Implement neuron importance analysis for critical neuron detection
+- [x] Create batch pruning analysis for efficient candidate evaluation
+- [x] Add API endpoints for pruning analysis functionality
+- [x] Implement export functionality for pruning analysis results
+- [ ] Add pruning analysis visualization components to React frontend
+- [ ] Create interactive pruning candidate selection interface
+- [ ] Implement before/after pruning comparison visualizations
+
 ### Sparse Autoencoder Integration
 - [ ] Implement sparse autoencoder (SAE) training pipeline for neuron activation decomposition.
 - [ ] Create SAE feature extraction function to decompose polysemantic neurons into interpretable components.
