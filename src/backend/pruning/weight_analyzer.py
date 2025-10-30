@@ -13,6 +13,7 @@ from typing import Dict, List, Tuple, Optional, Any
 from pathlib import Path
 import pandas as pd
 from dataclasses import dataclass
+from backend.utils.cache import cache_manager, CACHE_OPERATIONS
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +118,20 @@ class WeightAnalyzer:
                                   threshold_percentile: float = 10.0,
                                   min_sparsity: float = 0.1) -> List[NeuronWeightInfo]:
         """Identify neurons that are good candidates for pruning."""
+        # Check cache first
+        cache_params = {
+            "model_name": self.model.__class__.__name__,
+            "model_config": str(self.model.config) if hasattr(self.model, 'config') else "unknown",
+            "threshold_percentile": threshold_percentile,
+            "min_sparsity": min_sparsity
+        }
+        
+        cached_result = cache_manager.get(CACHE_OPERATIONS["pruning_candidates"], cache_params)
+        if cached_result is not None:
+            logger.info("Using cached pruning candidates")
+            return cached_result
+        
+        # Perform analysis
         candidates = []
         
         for name, module in self.model.named_modules():
@@ -153,10 +168,25 @@ class WeightAnalyzer:
                                 pruning_score=pruning_score
                             ))
         
+        # Cache the result
+        cache_manager.set(CACHE_OPERATIONS["pruning_candidates"], cache_params, candidates)
+        
         return candidates
     
     def get_sparsity_analysis(self) -> Dict[str, Any]:
         """Get comprehensive sparsity analysis."""
+        # Check cache first
+        cache_params = {
+            "model_name": self.model.__class__.__name__,
+            "model_config": str(self.model.config) if hasattr(self.model, 'config') else "unknown"
+        }
+        
+        cached_result = cache_manager.get(CACHE_OPERATIONS["weight_analysis"], cache_params)
+        if cached_result is not None:
+            logger.info("Using cached weight analysis")
+            return cached_result
+        
+        # Perform analysis
         stats = self.extract_weight_stats()
         
         # Calculate overall sparsity
@@ -174,7 +204,7 @@ class WeightAnalyzer:
             for s in stats.values()
         }
         
-        return {
+        result = {
             'overall_sparsity': float(overall_sparsity),
             'total_parameters': int(total_params),
             'non_zero_parameters': int(total_non_zero),
@@ -196,6 +226,11 @@ class WeightAnalyzer:
                 for s in stats.values()
             ]
         }
+        
+        # Cache the result
+        cache_manager.set(CACHE_OPERATIONS["weight_analysis"], cache_params, result)
+        
+        return result
     
     def export_weight_analysis(self, output_path: str) -> None:
         """Export weight analysis results to JSON."""

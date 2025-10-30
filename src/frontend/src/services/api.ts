@@ -359,6 +359,30 @@ class ApiService {
       return {};
     }
   }
+
+  async compareModels(params: { modelA: string; modelB: string; prompts?: string[]; metric?: string; layerAlignment?: string; save?: boolean }): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/compare/models`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model_a: params.modelA,
+          model_b: params.modelB,
+          prompts: params.prompts,
+          metric: params.metric || 'cosine',
+          layer_alignment: params.layerAlignment || 'min_layers',
+          save: params.save !== false
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to compare models:', error);
+      return null;
+    }
+  }
 }
 
 export const apiService = new ApiService(); 

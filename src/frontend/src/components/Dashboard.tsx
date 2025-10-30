@@ -3,6 +3,8 @@ import { useActivationData } from '../hooks/useActivationData';
 import { ActivationVisualization } from './ActivationVisualization';
 import ModelInfoModal from './ModelInfoModal';
 import ModelSelector from './ModelSelector';
+import PruningAnalysis from './PruningAnalysis';
+import ModelComparison from './ModelComparison';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -17,6 +19,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const [customPrompt, setCustomPrompt] = useState<string>('');
   const [showCustomPromptInput, setShowCustomPromptInput] = useState<boolean>(false);
   const [currentModel, setCurrentModel] = useState<string>('gpt2');
+  const [activeTab, setActiveTab] = useState<string>('activations');
 
   const {
     activationData,
@@ -97,7 +100,30 @@ const Dashboard: React.FC<DashboardProps> = () => {
       </header>
 
       <div className="dashboard-content">
-        <div className="control-panel">
+        <div className="tab-navigation">
+          <button 
+            className={`tab-button ${activeTab === 'activations' ? 'active' : ''}`}
+            onClick={() => setActiveTab('activations')}
+          >
+            📊 Activations
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'pruning' ? 'active' : ''}`}
+            onClick={() => setActiveTab('pruning')}
+          >
+            🧠 Pruning Analysis
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'comparison' ? 'active' : ''}`}
+            onClick={() => setActiveTab('comparison')}
+          >
+            🔀 Model Comparison
+          </button>
+        </div>
+
+        {activeTab === 'activations' && (
+          <>
+            <div className="control-panel">
           <ModelSelector onModelChange={handleModelChange} />
           
           <div className="control-group">
@@ -228,9 +254,9 @@ const Dashboard: React.FC<DashboardProps> = () => {
               {error}
             </div>
           )}
-        </div>
+            </div>
 
-        <div className="visualization-area">
+            <div className="visualization-area">
           {activationData ? (
             <ActivationVisualization
               activationData={activationData}
@@ -246,8 +272,17 @@ const Dashboard: React.FC<DashboardProps> = () => {
                 <p>Interactive visualizations will appear here</p>
               </div>
             </div>
-          )}
-        </div>
+            )}
+            </div>
+          </>
+        )}
+
+        {activeTab === 'pruning' && (
+          <PruningAnalysis />
+        )}
+        {activeTab === 'comparison' && (
+          <ModelComparison />
+        )}
       </div>
 
       <div className="dashboard-footer">

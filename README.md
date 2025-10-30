@@ -166,6 +166,27 @@ The application will be available at `http://localhost:3000`
 - **Quantization**: Large models automatically use 4-bit quantization to save memory
 - **Model Information**: Detailed model specs and architecture information
 - **Recommended Models**: Start with the recommended models for your use case
+ - **Cross-Model Comparison (NEW)**: Compare neurons across two models using shared prompts and view per-layer cosine similarity heatmaps
+
+#### Cross-Model Comparison
+- UI: Open the Dashboard and switch to the "Model Comparison" tab. Select two models and click Compare to render a similarity heatmap per layer.
+- API: Use the backend endpoint to run comparisons programmatically.
+
+Example:
+```bash
+curl -X POST http://localhost:5001/api/compare/models \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_a": "gpt2",
+    "model_b": "gpt2-medium",
+    "prompts": ["Hello world", "Translate this sentence to Spanish."],
+    "metric": "cosine",
+    "layer_alignment": "min_layers",
+    "save": true
+  }'
+```
+
+Response contains `layers` with per-layer similarity matrices and a `filename` when saved to `data/comparisons/`.
 
 ### **🧠 Pruning Analysis Features**
 - **Weight Analysis**: Analyze model weights to identify low-magnitude neurons

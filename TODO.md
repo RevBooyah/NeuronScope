@@ -51,7 +51,7 @@ Each task below should be specific enough to complete clearly in 1-2 prompts.
 - [x] Create batch pruning analysis for efficient candidate evaluation
 - [x] Add API endpoints for pruning analysis functionality
 - [x] Implement export functionality for pruning analysis results
-- [ ] Add pruning analysis visualization components to React frontend
+- [x] Add pruning analysis visualization components to React frontend
 - [ ] Create interactive pruning candidate selection interface
 - [ ] Implement before/after pruning comparison visualizations
 
@@ -97,16 +97,11 @@ Each task below should be specific enough to complete clearly in 1-2 prompts.
 - [ ] Add template library with pre-built analysis procedures.
 - [ ] Build UI for selecting and customizing analysis templates.
 
-## Multi-Model Support
+## Multi-Model Support & Comparison
 - [x] Extend model loading system to support multiple architectures (GPT-2, LLaMA, Mistral, Phi, Gemma, etc.).
 - [x] Implement model switching functionality with memory management.
 - [x] Create multi-model selection UI with model information and memory usage.
 - [x] Build comprehensive model loader with quantization support.
-- [ ] Implement cross-model neuron comparison algorithms.
-- [ ] Create multi-model visualization components for comparative analysis.
-
-## Multi-Model Comparison
-- [ ] Extend model loading system to support multiple architectures (Claude, LLaMA, etc.).
 - [ ] Implement cross-model neuron comparison algorithms.
 - [ ] Create multi-model visualization components for comparative analysis.
 - [ ] Build UI for selecting and comparing different models.
@@ -114,7 +109,7 @@ Each task below should be specific enough to complete clearly in 1-2 prompts.
 ## Neuron Clustering
 - [x] Implement clustering of neurons (K-Means initially) in Python backend.
 - [x] Export clustering results (cluster assignments, cluster centers) in structured format for UI consumption.
-- [ ] Visualize neuron clusters interactively in web UI (scatter plot, color-coded clusters).
+- [x] Visualize neuron clusters interactively in web UI (scatter plot, color-coded clusters).
 
 ## Drift Analysis Preparation
 - [ ] Write a script to export neuron activations from multiple GPT-2 checkpoints (e.g., after fine-tuning epochs).

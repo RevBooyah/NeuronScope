@@ -26,7 +26,9 @@ from activations.extractor import ActivationExtractor
 from clustering.neuron_clustering import NeuronClusterer
 from queries.reverse_queries import ReverseQueryEngine
 from utils.data_io import DataIO
+from utils.cache import cache_manager
 from pruning import WeightAnalyzer, PruningImpactAnalyzer
+from comparison.cross_model_comparison import CrossModelComparator
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -44,6 +46,7 @@ query_engine = None  # Will be initialized when needed
 weight_analyzer = None  # Will be initialized when needed
 pruning_analyzer = None  # Will be initialized when needed
 current_model = 'gpt2'  # Default model
+comparator = None  # Will be initialized when needed
 
 def get_model_loader():
     """Get or create the model loader."""
@@ -89,6 +92,13 @@ def get_pruning_analyzer():
         model, tokenizer = get_model_loader().load_model(current_model)
         pruning_analyzer = PruningImpactAnalyzer(model, tokenizer)
     return pruning_analyzer
+
+def get_comparator():
+    """Get or create the cross-model comparator."""
+    global comparator
+    if comparator is None:
+        comparator = CrossModelComparator(get_model_loader())
+    return comparator
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -358,6 +368,58 @@ def add_sample_prompt():
         logger.error(f"Failed to add sample prompt: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/compare/models', methods=['POST'])
+def compare_models():
+    """Compute cross-model neuron similarity for two models given prompts."""
+    try:
+        payload = request.get_json() or {}
+        model_a = payload.get('model_a', 'gpt2')
+        model_b = payload.get('model_b', 'gpt2-medium')
+        prompts = payload.get('prompts')
+        metric = payload.get('metric', 'cosine')
+        layer_alignment = payload.get('layer_alignment', 'min_layers')
+
+        if not prompts:
+            # fallback to samples
+            samples_file = Path('samples.json')
+            if samples_file.exists():
+                with open(samples_file, 'r') as f:
+                    prompts = json.load(f)
+            else:
+                prompts = [
+                    "Hello world",
+                    "What is the capital of France?",
+                    "Translate this sentence to Spanish.",
+                    "The cat sat on the mat.",
+                    "If it rains tomorrow, we'll cancel the picnic."
+                ]
+
+        cmp = get_comparator()
+        result = cmp.compare_models(
+            model_a=model_a,
+            model_b=model_b,
+            prompts=prompts,
+            layer_alignment=layer_alignment,
+            metric=metric
+        )
+
+        # Optional save flag
+        if payload.get('save', True):
+            try:
+                filename = data_io.save_comparison(result)
+                result_with_file = dict(result)
+                result_with_file['filename'] = Path(filename).name
+                return jsonify(result_with_file)
+            except Exception as save_err:
+                logger.warning(f"Failed to save comparison: {save_err}")
+                return jsonify(result)
+        else:
+            return jsonify(result)
+
+    except Exception as e:
+        logger.error(f"Failed to compare models: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/models', methods=['GET'])
 def get_available_models():
     """Get list of available models."""
@@ -517,7 +579,7 @@ def get_pruning_candidates():
                 for c in candidates
             ],
             'total_candidates': len(candidates),
-            'threshold_percentile': threshold
+            'threshold_percentile': float(threshold)
         })
         
     except Exception as e:
@@ -636,6 +698,40 @@ def export_pruning_analysis():
         
     except Exception as e:
         logger.error(f"Failed to export pruning analysis: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Cache Management Endpoints
+
+@app.route('/api/cache/stats', methods=['GET'])
+def get_cache_stats():
+    """Get cache statistics."""
+    try:
+        stats = cache_manager.get_stats()
+        return jsonify(stats)
+    except Exception as e:
+        logger.error(f"Failed to get cache stats: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/cache/clear', methods=['POST'])
+def clear_cache():
+    """Clear all cache entries."""
+    try:
+        data = request.get_json() or {}
+        operation = data.get('operation')  # Optional: clear specific operation
+        
+        if operation:
+            cache_manager.invalidate(operation)
+            message = f"Cleared cache for operation: {operation}"
+        else:
+            cache_manager.clear_all()
+            message = "Cleared all cache entries"
+        
+        return jsonify({
+            'message': message,
+            'stats': cache_manager.get_stats()
+        })
+    except Exception as e:
+        logger.error(f"Failed to clear cache: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # Serve static files from the data directory

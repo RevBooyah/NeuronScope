@@ -27,11 +27,13 @@ class DataIO:
         self.activations_dir = self.base_data_dir / "activations"
         self.clusters_dir = self.base_data_dir / "clusters"
         self.queries_dir = self.base_data_dir / "queries"
+        self.comparisons_dir = self.base_data_dir / "comparisons"
         
         # Create directories if they don't exist
         self.activations_dir.mkdir(parents=True, exist_ok=True)
         self.clusters_dir.mkdir(parents=True, exist_ok=True)
         self.queries_dir.mkdir(parents=True, exist_ok=True)
+        self.comparisons_dir.mkdir(parents=True, exist_ok=True)
     
     def save_activations(self, activation_data: Dict[str, Any], filename: Optional[str] = None) -> str:
         """
@@ -221,6 +223,46 @@ class DataIO:
         """
         files = list(self.queries_dir.glob("*.json"))
         return [f.name for f in files]
+
+    def save_comparison(self, comparison_data: Dict[str, Any], filename: Optional[str] = None) -> str:
+        """
+        Save cross-model comparison results to JSON file.
+        
+        Args:
+            comparison_data: Comparison data dictionary
+            filename: Optional filename. If None, generates from model names and timestamp.
+        
+        Returns:
+            Path to saved file
+        """
+        from datetime import datetime
+        if filename is None:
+            a = comparison_data.get("models", {}).get("a", "model_a")
+            b = comparison_data.get("models", {}).get("b", "model_b")
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"compare_{a}_vs_{b}_{ts}.json"
+        filepath = self.comparisons_dir / filename
+        try:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(comparison_data, f, indent=2, ensure_ascii=False)
+            logger.info(f"Saved comparison data to: {filepath}")
+            return str(filepath)
+        except Exception as e:
+            logger.error(f"Failed to save comparison data: {str(e)}")
+            raise RuntimeError(f"Failed to save comparison data: {str(e)}")
+
+    def list_comparison_files(self) -> List[str]:
+        """List available comparison files."""
+        files = list(self.comparisons_dir.glob("*.json"))
+        return [f.name for f in files]
+
+    def load_comparison(self, filename: str) -> Dict[str, Any]:
+        """Load cross-model comparison JSON by filename."""
+        filepath = self.comparisons_dir / filename
+        if not filepath.exists():
+            raise FileNotFoundError(f"Comparison file not found: {filepath}")
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return json.load(f)
 
 
 def create_data_io(base_data_dir: str = "data") -> DataIO:
